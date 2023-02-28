@@ -1,0 +1,236 @@
+#include <stdlib.h>
+#include <stdio.h>
+
+
+typedef struct BlockMeta {
+    int *pointer;
+    int index;
+    int IDBlock;
+    int size;
+    struct BlockMeta* next;
+} BlockMeta;
+
+BlockMeta* CreateBlockMeta(int *Pointer, int Index, int Id, int Size)
+{
+    BlockMeta *tmp = (BlockMeta*) malloc(sizeof(BlockMeta));
+    tmp->pointer = Pointer;
+    tmp->index = Index;
+    tmp->IDBlock = Id;
+    tmp->size = Size;
+    tmp->next = NULL;
+    return tmp;
+}
+
+BlockMeta* getLast(BlockMeta *head) { 
+    if (head == NULL) {
+        return NULL;
+    }
+    while (head->next) {
+        head = head->next;
+    }
+    return head;
+}
+
+
+void pushBack(BlockMeta **head, BlockMeta *tmp) {
+    BlockMeta *last = getLast(*head);
+    if (last == NULL)
+    {
+        *head = tmp;
+    }
+    else
+    {
+        last->next = tmp;
+    }
+}
+
+
+void delete(BlockMeta **head, BlockMeta *elem) 
+{
+    BlockMeta *pnow = *head; // текущий узел
+    BlockMeta *prev = NULL;   // предыдущий узел
+    
+    while (pnow != NULL)
+    {
+        if (elem == pnow)
+        {
+            if (elem == *head)
+            {
+                *head = elem->next; 
+            }
+            else
+            {
+                prev->next=elem->next;
+            }
+            free(elem);
+            return;
+        }
+        prev = pnow;
+        pnow = pnow->next;
+    }
+}
+
+BlockMeta* search(BlockMeta *usedMem, int IdBlock)
+{
+    while (usedMem != NULL)
+    {
+        if (usedMem->IDBlock == IdBlock)
+        {
+            return usedMem;
+        }
+        usedMem = usedMem->next;
+    }
+    
+    return NULL;
+}
+
+void print(BlockMeta *head)
+{
+    if (head == NULL) {
+        printf("Нет данных\n");
+        return;
+    }
+    printf("Адрес памяти\t|\tИндекс\t|\tID\t|\tРазмер\n");
+    do 
+    {
+        printf("%p\t|\t%d\t|\t%d\t|\t%d\n", head->pointer, head->index, head->IDBlock, head->size);
+        head = head->next;
+    } while (head);
+}
+
+BlockMeta* findFreeMemory(int blockSize, BlockMeta* freeMem) 
+{
+    while (freeMem != NULL)
+    {
+        if (freeMem->size >= blockSize)
+        {
+            return freeMem;
+        }
+        
+        freeMem = freeMem->next;
+    }
+    
+    return NULL;
+}
+
+void allocateMem(int memSize, int* p, int blockID, BlockMeta **p_freeMem, BlockMeta **p_usedMem) {
+
+    int blockSize;
+    printf("Введите размер блока памяти: ");
+    scanf("%d", &blockSize);
+    
+    
+    BlockMeta* freeMemory = findFreeMemory(blockSize, *p_freeMem); // находим непрерывную свободную память нужного размера
+    
+    if (freeMemory == NULL)
+    {
+        printf("Нет свободной памяти\n");
+    }
+    else
+    {
+        for (int i = 0; i < blockSize; i++) 
+        {
+            p[freeMemory->index+i] = blockID;
+        }
+        
+        BlockMeta *tmp = CreateBlockMeta(freeMemory->pointer, freeMemory->index, blockID, blockSize);
+        pushBack(p_usedMem, tmp);
+        
+        if (freeMemory->size == blockSize)
+        {
+            delete(p_freeMem, freeMemory);
+        }
+        else
+        {
+            freeMemory->pointer += blockSize;
+            freeMemory->index += blockSize;
+            freeMemory->size -= blockSize;
+        }
+    }
+}
+
+void freeMemFunc(int* p, BlockMeta **p_freeMem, BlockMeta **p_usedMem)
+{
+    int IdBlock;
+    printf("Введите ID блока памяти: ");
+    scanf("%d", &IdBlock);
+    
+    BlockMeta* block = search(*p_usedMem, IdBlock);
+    
+    if (block == NULL)
+    {
+        printf("Блок не найден");
+        return;
+    }
+    
+     
+    BlockMeta *newBlock = CreateBlockMeta(block->pointer, block->index, 0, block->size);
+    pushBack(p_freeMem, newBlock);
+    
+    for (int i = 0; i < block->size; i++)
+    {
+        p[block->index+i] = 0;
+    }
+    
+    delete(p_usedMem, block);
+}
+
+
+int main(int argc, const char * argv[]) 
+{
+    
+    int memSize;
+    
+    printf("Введите размер (Байт) необходимой памяти: ");
+    scanf("%d", &memSize);
+
+    int *p = (int*) malloc(memSize * sizeof(int)); // выделенная память
+    
+    for (int i = 0; i < memSize; i++) 
+    {
+        p[i] = 0;
+    }
+    
+    BlockMeta *freeMem = NULL; // указатель на список из фрагментов свободной памяти
+    BlockMeta *usedMem = NULL; // указатель на список из фрагментов занятой памяти
+    
+    // так как в начале вся память является свободной, создаём блок свободной памяти и добавляем его в список
+    
+    freeMem = CreateBlockMeta(&p[0], 0, 0, memSize);
+    
+    
+        
+    
+    int choice;
+    
+    int blockID = 1;
+    
+    do {
+        printf("Память: ");
+        for (int i = 0; i < memSize; i++) 
+        {
+            printf("%d ", p[i]);
+        }
+        printf("\nИспользуемая память\n");
+        print(usedMem);
+        printf("\nСвободная память\n");
+        print(freeMem);
+        printf("\n1. Выделение памяти заданного размера (блок)\n2. Освобождение памяти\n3. Выход\nПункт: ");
+        scanf("%d", &choice);
+        if (choice == 1) {
+            allocateMem(memSize, p, blockID, &freeMem, &usedMem);
+            blockID++;
+        }
+        else if (choice == 2) {
+            freeMemFunc(p, &freeMem, &usedMem);
+        }
+        else if (choice == 3) {
+            free(p);
+            printf("Выход");
+        }
+        else {
+                printf("Error 0. No such comand");
+        }
+    } while (choice != 3);
+    
+}
