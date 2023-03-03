@@ -7,7 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		D9144FBE29968F7C008A5259 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = D9144FBD29968F7C008A5259 /* main.c */; };
+		D97661F929B24D7B00279A70 /* MemManagement.c in Sources */ = {isa = PBXBuildFile; fileRef = D97661F829B24D7B00279A70 /* MemManagement.c */; };
+		D97661FB29B24EF500279A70 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = D97661FA29B24EF500279A70 /* main.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -24,7 +25,9 @@
 
 /* Begin PBXFileReference section */
 		D9144FBA29968F7C008A5259 /* Ex1 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Ex1; sourceTree = BUILT_PRODUCTS_DIR; };
-		D9144FBD29968F7C008A5259 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		D97661F729B24D7B00279A70 /* MemManagement.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = MemManagement.h; path = Ex1/Headers/MemManagement.h; sourceTree = "<group>"; };
+		D97661F829B24D7B00279A70 /* MemManagement.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = MemManagement.c; path = Ex1/Headers/MemManagement.c; sourceTree = "<group>"; };
+		D97661FA29B24EF500279A70 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -41,6 +44,8 @@
 		D9144FB129968F7C008A5259 = {
 			isa = PBXGroup;
 			children = (
+				D97661F729B24D7B00279A70 /* MemManagement.h */,
+				D97661F829B24D7B00279A70 /* MemManagement.c */,
 				D9144FBC29968F7C008A5259 /* Ex1 */,
 				D9144FBB29968F7C008A5259 /* Products */,
 			);
@@ -57,7 +62,7 @@
 		D9144FBC29968F7C008A5259 /* Ex1 */ = {
 			isa = PBXGroup;
 			children = (
-				D9144FBD29968F7C008A5259 /* main.c */,
+				D97661FA29B24EF500279A70 /* main.c */,
 			);
 			path = Ex1;
 			sourceTree = "<group>";
@@ -119,7 +124,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D9144FBE29968F7C008A5259 /* main.c in Sources */,
+				D97661FB29B24EF500279A70 /* main.c in Sources */,
+				D97661F929B24D7B00279A70 /* MemManagement.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
