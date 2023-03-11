@@ -4,10 +4,9 @@
 //
 //  Created by Sasha Plakhotnik on 03.03.2023.
 //
-
-#include "MemManagement.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "MemManagement.h"
 
 
 void logPush(FILE *fp, char dataC[], int dataI) {
@@ -27,6 +26,73 @@ typedef struct BlockMeta {
     int size; // размер блока памяти
     struct BlockMeta* next; // указатель на следующую структуру
 } BlockMeta;
+
+
+void Optimization (int* p, BlockMeta **freeMem, BlockMeta **usedMem, FILE *fp)
+{
+    BlockMeta *tmp = *usedMem; // начинаем проходиться по занятой памяти
+    int fstIter = 1; // первая итерация цикла или нет
+    int sEmp, sFull, sizeEmp, sizeFull;
+
+    logPush(fp, "[Optimize] Request to stack all blocks to the left", 0);
+
+    do {
+
+        if (tmp->index != 0 && fstIter == 1) // если пустой блок стоит первее занятого
+        {
+            sEmp = 0; // начало пустого блока
+            sFull = tmp->index; // начало первого занятого блока после пустого
+            sizeFull = tmp->size; // размер занятого
+        }
+        else
+        {
+            sEmp = tmp->index + tmp->size;
+            sFull = tmp->next->index;
+            sizeFull = tmp->next->size;
+            tmp = tmp->next; // перемещаемся на первый занятый блок после пустого
+        }
+        sizeEmp = sFull - sEmp; // размер пустого блока
+
+        if (sizeEmp != 0) // если пустой блок есть на самом деле
+        {
+            tmp->pointer = &p[sEmp]; // сдвигаем указатель занятого блока влево
+            tmp->index = sEmp; // меняем индекс занятого блока
+            for (int i = 0; i < sizeFull; i++) // сдвигаем сами данные влево
+            {
+                p[sEmp + i] = p[sEmp + i + sizeEmp];
+            }
+            BlockMeta *empty = *freeMem;
+            while (empty->index != sEmp) // находим в списке пустых блоков нужный
+            {
+                empty = empty->next;
+            }
+            empty->pointer = &p[sEmp + sizeFull]; // сдвигаем указатель пустого блока вправо
+            empty->index = sEmp + sizeFull; // меняем индекс пустого блока
+        }
+
+        fstIter = 0;
+    } while (tmp->next != NULL);
+
+    BlockMeta *block = *freeMem;
+    int *pointer = block->pointer;
+    int index = block->index;
+    int size = 0;
+    while (block != NULL) // считаем суммарный размер пустого места, удаляем записи о блоках
+    {
+        size += block->size;
+        tmp = block->next;
+        DeleteBlockMeta(freeMem, block);
+        block = tmp;
+    }
+    block = CreateBlockMeta(pointer, index, 0, size); // новая запись об одном пустом блоке
+    Push(freeMem, block); // добавляем в список пустой памяти
+    for (int i = 0; i < size; i++) { // для наглядности меняем пустое на нолики
+        p[index + i] = 0;
+    }
+
+    logPush(fp, "[Optimize] Metadata changed. Defragmentation of empty space completed", 0);
+}
+
 
 BlockMeta* CreateBlockMeta(int *Pointer, int Index, int Id, int Size)
 {
@@ -150,38 +216,42 @@ int AllocateMem(FILE *fp, int memSize, int* p, int blockID, BlockMeta **p_freeMe
     
     if (freeMemory == NULL)
     {
-        printf("Нет свободной памяти\n");
-        logPush(fp, "[Allocate] Not enough memory", 0);
-        return 0;
+        printf("Попытка оптимизации памяти\n");
+        Optimization(p, p_freeMem, p_usedMem, fp);
+        freeMemory = FindFreeMemory(blockSize, *p_freeMem); // находим непрерывную свободную память нужного размера
+        if (freeMemory == NULL) {
+            printf("Нет свободной памяти\n");
+            logPush(fp, "[Allocate] Not enough memory", 0);
+            return 0;
+        }
+        printf("Память оптимизирована\n");
+        
     }
+        // меняем значения ячеек в самой памяти (чисто для наглядности, чтобы нам самим было видно, что мы память чем-то заняли)
+    for (int i = 0; i < blockSize; i++)
+    {
+        p[freeMemory->index+i] = blockID;
+    }
+    
+    // создаём структуру с инфой о новом используемом блоке памяти
+    BlockMeta *tmp = CreateBlockMeta(freeMemory->pointer, freeMemory->index, blockID, blockSize);
+    // добавляем структуру в список
+    Push(p_usedMem, tmp);
+    
+    // если размер блока свободной памяти равен размеру блока, который мы хотим занять значит данного блока свободной памяти большей не существует, удаляем инфу о нём
+    if (freeMemory->size == blockSize)
+    {
+        DeleteBlockMeta(p_freeMem, freeMemory);
+    }
+    // иначе мы лишь уменьшаем наш блок свободной памяти
     else
     {
-        // меняем значения ячеек в самой памяти (чисто для наглядности, чтобы нам самим было видно, что мы память чем-то заняли)
-        for (int i = 0; i < blockSize; i++)
-        {
-            p[freeMemory->index+i] = blockID;
-        }
-        
-        // создаём структуру с инфой о новом используемом блоке памяти
-        BlockMeta *tmp = CreateBlockMeta(freeMemory->pointer, freeMemory->index, blockID, blockSize);
-        // добавляем структуру в список
-        Push(p_usedMem, tmp);
-        
-        // если размер блока свободной памяти равен размеру блока, который мы хотим занять значит данного блока свободной памяти большей не существует, удаляем инфу о нём
-        if (freeMemory->size == blockSize)
-        {
-            DeleteBlockMeta(p_freeMem, freeMemory);
-        }
-        // иначе мы лишь уменьшаем наш блок свободной памяти
-        else
-        {
-            freeMemory->pointer += blockSize;
-            freeMemory->index += blockSize;
-            freeMemory->size -= blockSize;
-        }
-        logPush(fp, "[Allocate] Metadata changed. Memory allocated (byte):", blockSize);
-        return 1;
+        freeMemory->pointer += blockSize;
+        freeMemory->index += blockSize;
+        freeMemory->size -= blockSize;
     }
+    logPush(fp, "[Allocate] Metadata changed. Memory allocated (byte):", blockSize);
+    return 1;
 }
 
 // функция Join необходима для освобождения памяти, вызывается из функции FreeMemFunc(), которая описана ниже
@@ -284,3 +354,5 @@ void Print(BlockMeta *head)
         head = head->next;
     } while (head);
 }
+
+

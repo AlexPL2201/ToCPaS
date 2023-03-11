@@ -7,11 +7,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
 #ifndef MemManagement_h
 #define MemManagement_h
-
-
 void logPush(FILE *fp, char dataC[], int dataI);
 typedef struct BlockMeta BlockMeta;
 BlockMeta* CreateBlockMeta(int *Pointer, int Index, int Id, int Size);

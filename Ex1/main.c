@@ -7,7 +7,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "MemManagement.h"
+#include "Headers/MemManagement.h"
+#include "Headers/DataStructs.h"
+
 
 int main(int argc, const char * argv[])
 {
@@ -18,6 +20,7 @@ int main(int argc, const char * argv[])
     scanf("%d", &memSize);
 
     int *p = (int*) malloc(memSize * sizeof(int)); // выделенная память
+    
     
     if (p != NULL) {
         logPush(fp, "[Main] Allocated memory(bytes):", memSize);

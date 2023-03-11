@@ -14,8 +14,8 @@
             filePath = "Ex1/Headers/MemManagement.c"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "113"
-            endingLineNumber = "113"
+            startingLineNumber = "179"
+            endingLineNumber = "179"
             landmarkName = "FindFreeMemory(blockSize, freeMem)"
             landmarkType = "9">
          </BreakpointContent>
